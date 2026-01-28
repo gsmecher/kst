@@ -1,0 +1,87 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # For git revision info
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install Qt5
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '5.15.2'
+        arch: 'win64_msvc2019_64'
+        cache: true
+
+    - name: Install dependencies via vcpkg
+      run: |
+        vcpkg install --triplet x64-windows `
+          ecm `
+          hdf5 `
+          tiff
+      shell: pwsh
+      env:
+        VCPKG_ROOT: C:/vcpkg
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. `
+          -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+          -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" `
+          -Dkst_release=ON `
+          -Dkst_3rdparty_build=ON `
+          -Dkst_console=OFF `
+          -Dkst_pch=ON `
+          -Dkst_svnversion=ON
+      shell: pwsh
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config ${{ env.BUILD_TYPE }} --parallel
+      shell: pwsh
+
+    - name: Prepare artifacts
+      run: |
+        cd build
+        cmake --install . --config ${{ env.BUILD_TYPE }} --prefix install
+      shell: pwsh
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: kst-windows-x64-${{ github.sha }}
+        path: build/install/**/*
+        retention-days: 30
+
+    - name: Upload build logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs-${{ github.sha }}
+        path: |
+          build/CMakeFiles/*.log
+          build/CMakeCache.txt
+        retention-days: 7
