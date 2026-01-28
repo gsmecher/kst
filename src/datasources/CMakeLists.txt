@@ -21,7 +21,10 @@ kst_add_plugin(. qimagesource)
 #kst_add_plugin(. sampledatasource)
 kst_add_plugin(. sourcelist)
 kst_add_plugin(. bis)
-kst_add_plugin(. its)
+
+if(UNIX)
+  kst_add_plugin(. its)
+endif()
 
 if(getdata)
 	include_directories(${GETDATA_INCLUDE_DIR})

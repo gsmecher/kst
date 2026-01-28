@@ -75,9 +75,11 @@ if(APPLE)
 	set(gddeps -lbz2 -lz)
 endif()
 set(GETDATA_INCLUDEDIR ${install_dir}/include PARENT_SCOPE)
+set(GETDATA_INCLUDE_DIR ${install_dir}/include PARENT_SCOPE)
 kst_external_static_lib(gdc_build   libgetdata libgetdata.a)
 kst_external_static_lib(gdcpp_build libgetdata libgetdata++.a)
 set(GETDATA_LIBRARIES gdcpp_build gdc_build ${gddeps} PARENT_SCOPE)
+set(getdata 1 PARENT_SCOPE)
 
 
 # ZLIB needed by MATIO
@@ -139,8 +141,10 @@ ExternalProject_Add(matio
 add_dependencies(matio zlib)
 
 set(MATIO_INCLUDEDIR ${install_dir}/include PARENT_SCOPE)
+set(MATIO_INCLUDE_DIR ${install_dir}/include PARENT_SCOPE)
 kst_external_static_lib(matio_build matio libmatio.a)
 set(MATIO_LIBRARIES matio_build zlib_build PARENT_SCOPE)
+set(matio 1 PARENT_SCOPE)
 
 
 # NETCDF
@@ -173,10 +177,13 @@ ExternalProject_Add(netcdf
 					INSTALL_COMMAND ${ext_make} ${ext_install})
 
 set(NETCDF_INCLUDEDIR  ${install_dir}/include PARENT_SCOPE)
+set(NETCDF_INCLUDE_DIR ${install_dir}/include PARENT_SCOPE)
 kst_external_static_lib(netcdf_c_build netcdf libnetcdf.a)
 kst_external_static_lib(netcdf_cpp_build netcdf libnetcdf_c++.a)
 set(NETCDF_LIBRARY_C netcdf_c_build PARENT_SCOPE)
 set(NETCDF_LIBRARY_CPP netcdf_cpp_build PARENT_SCOPE)
+set(NETCDF_LIBRARIES netcdf_cpp_build netcdf_c_build PARENT_SCOPE)
+set(netcdf 1 PARENT_SCOPE)
 
 # CFITSIO
 set(ext_src ${build_dir}/cfitsio/src/cfitsio)
@@ -209,8 +216,10 @@ ExternalProject_Add(cfitsio
 
 
 set(CFITSIO_INCLUDEDIR ${install_dir}/include/cfitsio PARENT_SCOPE)
+set(CFITSIO_INCLUDE_DIR ${install_dir}/include/cfitsio PARENT_SCOPE)
 kst_external_static_lib(cfitsio_build cfitsio libcfitsio.a)
 set(CFITSIO_LIBRARIES cfitsio_build PARENT_SCOPE)
+set(cfitsio 1 PARENT_SCOPE)
 
 
 
@@ -247,8 +256,16 @@ if(APPLE)
 		set(GSL_DEPS ${install_dir}/lib/libgslcblas.a)
 endif()
 set(GSL_INCLUDEDIR ${install_dir}/include PARENT_SCOPE)
+set(GSL_INCLUDE_DIR ${install_dir}/include PARENT_SCOPE)
 kst_external_static_lib(gsl_build gsl libgsl.a)
 set(GSL_LIBRARIES gsl_build ${GSL_DEPS} PARENT_SCOPE)
+
+# Create GSL::gsl imported target for compatibility
+add_library(GSL::gsl INTERFACE IMPORTED GLOBAL)
+set_target_properties(GSL::gsl PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${install_dir}/include"
+    INTERFACE_LINK_LIBRARIES "gsl_build"
+)
 
 
 
